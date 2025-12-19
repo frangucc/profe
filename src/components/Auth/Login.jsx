@@ -1,32 +1,38 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../App';
-import { users } from '../../data/mockData';
 import { LogIn } from 'lucide-react';
+import api from '../../utils/api';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
-    const user = Object.values(users).find(
-      u => u.email === email && u.password === password
-    );
-
-    if (user) {
-      login(user);
-    } else {
-      setError('Invalid email or password');
+    try {
+      const data = await api.login(email, password);
+      login(data.user);
+    } catch (err) {
+      setError(err.message || 'Invalid email or password');
+    } finally {
+      setLoading(false);
     }
   };
 
   const quickLogin = (userType) => {
-    const user = users[userType];
+    const demoUsers = {
+      player: { email: 'player@profe.com', password: 'player123' },
+      coach: { email: 'coach@profe.com', password: 'coach123' },
+      admin: { email: 'admin@profe.com', password: 'admin123' }
+    };
+    const user = demoUsers[userType];
     setEmail(user.email);
     setPassword(user.password);
   };
@@ -75,8 +81,8 @@ function Login() {
               />
             </div>
 
-            <button type="submit" className="btn-primary w-full">
-              Sign In
+            <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
+              {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 
