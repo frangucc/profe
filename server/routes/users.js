@@ -61,13 +61,13 @@ router.get('/profile', authenticateToken, async (req, res) => {
 router.put('/profile', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { firstName, lastName, age, skill_level, primary_position, secondary_positions } = req.body;
+    const { first_name, last_name, age, skill_level, primary_position, secondary_positions } = req.body;
 
     // Update user table
-    if (firstName || lastName) {
+    if (first_name || last_name) {
       await pool.query(
         'UPDATE users SET first_name = COALESCE($1, first_name), last_name = COALESCE($2, last_name), updated_at = CURRENT_TIMESTAMP WHERE id = $3',
-        [firstName, lastName, userId]
+        [first_name, last_name, userId]
       );
     }
 

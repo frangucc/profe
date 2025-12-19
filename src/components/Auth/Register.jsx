@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../App';
 import { positions, skillLevels } from '../../data/mockData';
 import { UserPlus } from 'lucide-react';
+import api from '../../utils/api';
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -16,23 +17,34 @@ function Register() {
     type: 'player'
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
-    const newUser = {
-      id: Date.now(),
-      ...formData,
-      joinedDate: new Date().toISOString().split('T')[0],
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.firstName}`,
-      secondaryPositions: []
-    };
+    try {
+      const data = await api.register({
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        userType: formData.type,
+        age: parseInt(formData.age),
+        primaryPosition: formData.primaryPosition,
+        skillLevel: formData.level
+      });
 
-    login(newUser);
-    navigate('/');
+      login(data.user);
+      navigate('/');
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -156,8 +168,8 @@ function Register() {
               </select>
             </div>
 
-            <button type="submit" className="btn-primary w-full">
-              Create Account
+            <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
+              {loading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 

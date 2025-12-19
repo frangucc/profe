@@ -14,7 +14,7 @@ function PlayerDashboard() {
     <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">
-          Welcome back, {currentUser?.firstName}!
+          Welcome back, {currentUser?.first_name}!
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
           Track your progress and continue your soccer journey

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
+import { useAuth } from '../../App';
 import { Sparkles, Target, Trophy } from 'lucide-react';
 
 function OnboardingSurvey() {
@@ -10,6 +11,7 @@ function OnboardingSurvey() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   useEffect(() => {
     loadQuestions();
@@ -66,6 +68,11 @@ function OnboardingSurvey() {
     setSubmitting(true);
     try {
       await api.submitSurvey(responses);
+
+      // Fetch updated user data with onboarding_completed flag
+      const { user } = await api.getCurrentUser();
+      login(user); // Update context and localStorage
+
       navigate('/');
     } catch (error) {
       console.error('Failed to submit survey:', error);

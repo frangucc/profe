@@ -30,11 +30,13 @@ router.post('/register', async (req, res) => {
     const user = userResult.rows[0];
 
     // Create profile based on user type
+    let profile = null;
     if (userType === 'player') {
-      await pool.query(
-        'INSERT INTO player_profiles (user_id, age, primary_position, skill_level, onboarding_completed) VALUES ($1, $2, $3, $4, false)',
+      const profileResult = await pool.query(
+        'INSERT INTO player_profiles (user_id, age, primary_position, skill_level, onboarding_completed) VALUES ($1, $2, $3, $4, false) RETURNING *',
         [user.id, age || null, primaryPosition || 'Central Midfielder', skillLevel || 'Beginner']
       );
+      profile = profileResult.rows[0];
 
       // Create user stats
       await pool.query(
@@ -50,7 +52,10 @@ router.post('/register', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.json({ user, token });
+    // Merge user and profile data
+    const userData = profile ? { ...user, ...profile } : user;
+
+    res.json({ user: userData, token });
   } catch (error) {
     console.error('Register error:', error);
     res.status(500).json({ error: 'Registration failed' });
