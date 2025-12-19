@@ -1,6 +1,7 @@
 {
   "name": "soccer-mentorship-app",
   "version": "1.0.0",
+  "type": "module",
   "description": "Mobile-first soccer mentorship and learning management system",
   "scripts": {
     "dev": "vite",
