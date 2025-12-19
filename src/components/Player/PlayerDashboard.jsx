@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../App';
 import api from '../../utils/api';
-import { BookOpen, Video, Target, TrendingUp, Award, Flame, Clock, CheckCircle } from 'lucide-react';
+import { BookOpen, Video, TrendingUp, Award, Flame, Clock } from 'lucide-react';
 
 function PlayerDashboard() {
   const { currentUser } = useAuth();
@@ -162,83 +162,18 @@ function PlayerDashboard() {
             </Link>
           </div>
 
-          <div className="space-y-4">
-            {recentVideos.map(video => (
-              <Link key={video.id} to={`/videos/${video.id}`} className="block">
-                <div className="flex gap-4 hover:bg-gray-50 dark:hover:bg-gray-700 p-3 rounded-lg transition-colors">
-                  <img
-                    src={video.thumbnail}
-                    alt={video.title}
-                    className="w-20 h-20 object-cover rounded-lg"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold mb-1 truncate">{video.title}</h3>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
-                      <Clock size={14} />
-                      <span>{video.duration}</span>
-                    </div>
-                    <span className={`inline-block text-xs px-2 py-1 rounded ${
-                      video.status === 'analyzed'
-                        ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-                        : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
-                    }`}>
-                      {video.status === 'analyzed' ? 'Analyzed' : 'Pending Review'}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-            <Link to="/videos/upload" className="btn-secondary w-full">
-              Upload New Video
+          <div className="text-center py-8">
+            <Video className="mx-auto mb-3 text-gray-400" size={48} />
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Video analysis coming soon
+            </p>
+            <Link to="/videos/upload" className="btn-secondary">
+              Upload Video
             </Link>
           </div>
         </div>
       </div>
 
-      {activeTraining && (
-        <div className="card mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Target className="text-primary-600" size={24} />
-              <h2 className="text-xl font-bold">This Week's Training Plan</h2>
-            </div>
-            <Link to="/training" className="text-primary-600 hover:text-primary-700 text-sm font-medium">
-              View Details
-            </Link>
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-semibold mb-2">{activeTraining.title}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              Week starting {activeTraining.weekStarting}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {activeTraining.focus.map((focus, idx) => (
-                <span key={idx} className="bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 text-xs px-3 py-1 rounded-full">
-                  {focus}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-3">
-            {activeTraining.sessions.map((session, idx) => (
-              <div key={idx} className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold">{session.day}</span>
-                  {session.completed && <CheckCircle className="text-green-600" size={18} />}
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{session.type}</p>
-                <ul className="text-xs space-y-1">
-                  {session.exercises.map((exercise, idx) => (
-                    <li key={idx} className="text-gray-500 dark:text-gray-400">{exercise}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="card">
         <div className="flex items-center gap-2 mb-4">
