@@ -125,11 +125,74 @@ class ApiClient {
     });
   }
 
+  async markContentComplete(contentId, quiz_score = null) {
+    return this.request(`/courses/content/${contentId}/complete`, {
+      method: 'POST',
+      body: JSON.stringify({ quiz_score }),
+    });
+  }
+
   async createCourse(courseData) {
     return this.request('/courses', {
       method: 'POST',
       body: JSON.stringify(courseData),
     });
+  }
+
+  async createModule(courseId, moduleData) {
+    return this.request(`/courses/${courseId}/modules`, {
+      method: 'POST',
+      body: JSON.stringify(moduleData),
+    });
+  }
+
+  async createModuleContent(moduleId, contentData) {
+    return this.request(`/courses/modules/${moduleId}/content`, {
+      method: 'POST',
+      body: JSON.stringify(contentData),
+    });
+  }
+
+  // Badge endpoints
+  async getBadges() {
+    return this.request('/badges');
+  }
+
+  async getEarnedBadges() {
+    return this.request('/badges/earned');
+  }
+
+  // Reference data endpoints
+  async getAgeGroups() {
+    return this.request('/reference/age-groups');
+  }
+
+  async getPositions(unit = null) {
+    const params = unit ? `?unit=${unit}` : '';
+    return this.request(`/reference/positions${params}`);
+  }
+
+  async getFormations() {
+    return this.request('/reference/formations');
+  }
+
+  async getPhases() {
+    return this.request('/reference/phases');
+  }
+
+  async getPrinciples(category = null) {
+    const params = category ? `?category=${category}` : '';
+    return this.request(`/reference/principles${params}`);
+  }
+
+  async getActionPatterns(type = null) {
+    const params = type ? `?type=${type}` : '';
+    return this.request(`/reference/action-patterns${params}`);
+  }
+
+  async getObjectives(filters = {}) {
+    const params = new URLSearchParams(filters);
+    return this.request(`/reference/objectives?${params}`);
   }
 }
 

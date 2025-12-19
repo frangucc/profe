@@ -10,6 +10,8 @@ import authRoutes from './routes/auth.js';
 import surveyRoutes from './routes/survey.js';
 import coursesRoutes from './routes/courses.js';
 import usersRoutes from './routes/users.js';
+import badgesRoutes from './routes/badges.js';
+import referenceRoutes from './routes/reference.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,6 +31,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/survey', surveyRoutes);
 app.use('/api/courses', coursesRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/badges', badgesRoutes);
+app.use('/api/reference', referenceRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
