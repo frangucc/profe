@@ -13,6 +13,7 @@ import VideoUpload from './components/Videos/VideoUpload';
 import TrainingPlan from './components/Training/TrainingPlan';
 import AdminPanel from './components/Admin/AdminPanel';
 import Navigation from './components/Shared/Navigation';
+import LandingPage from './components/Marketing/LandingPage';
 import api from './utils/api';
 
 const ThemeContext = createContext();
@@ -67,12 +68,18 @@ function App() {
           <div className="min-h-screen">
             {currentUser && <Navigation />}
             <Routes>
+              {/* Marketing Site */}
+              <Route path="/main" element={<LandingPage />} />
+
+              {/* Auth Routes */}
               <Route path="/login" element={!currentUser ? <Login /> : (needsOnboarding ? <Navigate to="/onboarding" /> : <Navigate to="/" />)} />
               <Route path="/register" element={!currentUser ? <Register /> : (needsOnboarding ? <Navigate to="/onboarding" /> : <Navigate to="/" />)} />
 
+              {/* Onboarding */}
               <Route path="/onboarding" element={currentUser && needsOnboarding ? <OnboardingSurvey /> : <Navigate to="/" />} />
 
-              <Route path="/" element={currentUser ? (needsOnboarding ? <Navigate to="/onboarding" /> : <PlayerDashboard />) : <Navigate to="/login" />} />
+              {/* App Routes */}
+              <Route path="/" element={currentUser ? (needsOnboarding ? <Navigate to="/onboarding" /> : <PlayerDashboard />) : <Navigate to="/main" />} />
               <Route path="/profile" element={currentUser ? <PlayerProfile /> : <Navigate to="/login" />} />
               <Route path="/courses" element={currentUser ? <CourseList /> : <Navigate to="/login" />} />
               <Route path="/courses/:id" element={currentUser ? <CourseDetail /> : <Navigate to="/login" />} />
