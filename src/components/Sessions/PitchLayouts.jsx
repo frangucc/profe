@@ -80,16 +80,13 @@ export const AttackHalf = ({ fieldBgColor, fieldLineColor }) => (
     {/* Top corner arcs */}
     <path d="M 20 35 Q 20 20 35 20" fill="none" stroke={fieldLineColor} strokeWidth="2" />
     <path d="M 565 20 Q 580 20 580 35" fill="none" stroke={fieldLineColor} strokeWidth="2" />
-
-    {/* Label */}
-    <text x="300" y="530" textAnchor="middle" fontSize="10" fill="#9ca3af" fontFamily="sans-serif">Attack</text>
   </svg>
 );
 
 export const DefenseHalf = ({ fieldBgColor, fieldLineColor }) => (
-  <svg width="600" height="520" viewBox="-10 -10 620 540" className="w-full h-full">
+  <svg width="600" height="500" viewBox="-10 -10 620 520" className="w-full h-full">
     {/* Field background */}
-    <rect x="-10" y="-10" width="620" height="540" fill={fieldBgColor} />
+    <rect x="-10" y="-10" width="620" height="520" fill={fieldBgColor} />
 
     {/* Border - bottom and sides extending to top edge */}
     <line x1="20" y1="480" x2="580" y2="480" stroke={fieldLineColor} strokeWidth="3" />
@@ -117,16 +114,13 @@ export const DefenseHalf = ({ fieldBgColor, fieldLineColor }) => (
     {/* Bottom corner arcs */}
     <path d="M 20 465 Q 20 480 35 480" fill="none" stroke={fieldLineColor} strokeWidth="2" />
     <path d="M 565 480 Q 580 480 580 465" fill="none" stroke={fieldLineColor} strokeWidth="2" />
-
-    {/* Label */}
-    <text x="300" y="530" textAnchor="middle" fontSize="10" fill="#9ca3af" fontFamily="sans-serif">Defense</text>
   </svg>
 );
 
 export const TrainingGrid = ({ fieldBgColor, fieldLineColor }) => (
-  <svg width="900" height="620" viewBox="-10 -10 920 640" className="w-full h-full">
+  <svg width="900" height="600" viewBox="-10 -10 920 620" className="w-full h-full">
     {/* Field background */}
-    <rect x="-10" y="-10" width="920" height="640" fill={fieldBgColor} />
+    <rect x="-10" y="-10" width="920" height="620" fill={fieldBgColor} />
 
     {/* Border */}
     <rect x="20" y="20" width="860" height="560" fill="none" stroke={fieldLineColor} strokeWidth="3" />
@@ -146,8 +140,5 @@ export const TrainingGrid = ({ fieldBgColor, fieldLineColor }) => (
 
     {/* Right side - Bottom mini goal */}
     <rect x="880" y="350" width="20" height="100" fill="none" stroke={fieldLineColor} strokeWidth="2" />
-
-    {/* Label */}
-    <text x="450" y="630" textAnchor="middle" fontSize="10" fill="#9ca3af" fontFamily="sans-serif">Training Field</text>
   </svg>
 );

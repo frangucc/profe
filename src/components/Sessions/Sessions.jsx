@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Send, ZoomIn, ZoomOut, RotateCw, Square, ChevronUp, ChevronDown, Grid3x3 } from 'lucide-react';
 import SessionsHeader from './SessionsHeader';
 import { FullPitch, AttackHalf, DefenseHalf, TrainingGrid } from './PitchLayouts';
+import ShapesPanel from './ShapesPanel';
 
 function Sessions() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -10,6 +11,11 @@ function Sessions() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [shapes, setShapes] = useState([]);
+  const [draggedShape, setDraggedShape] = useState(null);
+  const [gridSize] = useState(20); // 20px grid for snapping
+  const [conversationHistory, setConversationHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Initialize state from URL params
   const [zoom, setZoom] = useState(() => {
@@ -33,8 +39,27 @@ function Sessions() {
     params.set('pitch', pitchType);
     params.set('rotation', rotation.toString());
     params.set('zoom', zoom.toFixed(1));
+
+    // Save shapes to URL (encode as JSON)
+    if (shapes.length > 0) {
+      params.set('shapes', JSON.stringify(shapes));
+    }
+
     setSearchParams(params, { replace: true });
-  }, [pitchType, rotation, zoom, setSearchParams]);
+  }, [pitchType, rotation, zoom, shapes, setSearchParams]);
+
+  // Load shapes from URL on mount
+  useEffect(() => {
+    const shapesParam = searchParams.get('shapes');
+    if (shapesParam) {
+      try {
+        const loadedShapes = JSON.parse(shapesParam);
+        setShapes(loadedShapes);
+      } catch (e) {
+        console.error('Failed to load shapes from URL:', e);
+      }
+    }
+  }, []); // Only run once on mount
 
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
@@ -42,10 +67,188 @@ function Sessions() {
   const zoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.5));
   const rotatePitch = () => setRotation(prev => (prev + 90) % 360);
 
-  const handleSend = () => {
-    if (input.trim()) {
-      setMessages([...messages, { text: input, sender: 'user' }]);
-      setInput('');
+  const snapToGrid = (value) => {
+    return Math.round(value / gridSize) * gridSize;
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const shapeType = e.dataTransfer.getData('shapeType');
+
+    if (shapeType) {
+      // Dropping a NEW shape from the panel
+      const shapeColor = e.dataTransfer.getData('shapeColor');
+      const shapeFill = e.dataTransfer.getData('shapeFill') === 'true';
+
+      // Get the pitch container bounds
+      const pitchContainer = e.currentTarget;
+      const rect = pitchContainer.getBoundingClientRect();
+
+      // Calculate position relative to pitch (accounting for zoom)
+      let x = ((e.clientX - rect.left) / zoom) - (rect.width / (2 * zoom));
+      let y = ((e.clientY - rect.top) / zoom) - (rect.height / (2 * zoom));
+
+      // Snap to grid
+      x = snapToGrid(x);
+      y = snapToGrid(y);
+
+      // Add new shape
+      setShapes(prev => [...prev, {
+        id: Date.now(),
+        type: shapeType,
+        color: shapeColor,
+        fill: shapeFill,
+        rotation: 0, // Default to pointing up (cones)
+        x,
+        y
+      }]);
+    } else if (draggedShape) {
+      // Moving an EXISTING shape on the pitch
+      const pitchContainer = e.currentTarget;
+      const rect = pitchContainer.getBoundingClientRect();
+
+      let x = ((e.clientX - rect.left) / zoom) - (rect.width / (2 * zoom));
+      let y = ((e.clientY - rect.top) / zoom) - (rect.height / (2 * zoom));
+
+      // Snap to grid
+      x = snapToGrid(x);
+      y = snapToGrid(y);
+
+      // Update shape position
+      setShapes(prev => prev.map(shape =>
+        shape.id === draggedShape ? { ...shape, x, y } : shape
+      ));
+      setDraggedShape(null);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleShapeDragStart = (e, shapeId) => {
+    setDraggedShape(shapeId);
+  };
+
+  const handleShapeClick = (shapeId) => {
+    // Future: Could add selection/editing functionality here
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = input.trim();
+    setInput('');
+
+    // Add user message to UI
+    setMessages(prev => [...prev, { text: userMessage, sender: 'user' }]);
+
+    // Add to conversation history for Claude
+    const newHistory = [
+      ...conversationHistory,
+      { role: 'user', content: userMessage }
+    ];
+    setConversationHistory(newHistory);
+    setIsLoading(true);
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+      const response = await fetch(`${API_URL}/api/sessions/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messages: newHistory })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response from Claude');
+      }
+
+      const data = await response.json();
+      console.log('Response from server:', data);
+
+      // Handle tool execution response
+      if (data.type === 'tool_execution') {
+        // Execute each tool call
+        for (const toolCall of data.toolCalls) {
+          console.log('Executing tool from response:', toolCall.name, toolCall.input);
+
+          // Execute tool directly (result already computed on backend)
+          const toolResult = data.toolResults.find(r => r.tool_use_id === toolCall.id);
+          if (toolResult) {
+            const result = JSON.parse(toolResult.content);
+
+            // Apply the results to our state
+            if (result.shapes === 'CLEAR') {
+              setShapes([]);
+            } else if (result.shapes && result.shapes.length > 0) {
+              setShapes(prev => [...prev, ...result.shapes]);
+            }
+
+            if (result.pitchType) {
+              setPitchType(result.pitchType);
+            }
+          }
+        }
+
+        // Add assistant message if there is one
+        if (data.assistantMessage) {
+          setMessages(prev => [...prev, { text: data.assistantMessage, sender: 'assistant' }]);
+          setConversationHistory(prev => [
+            ...prev,
+            { role: 'assistant', content: data.assistantMessage }
+          ]);
+        }
+      } else if (data.type === 'text_only') {
+        // Just a text response, no tools
+        setMessages(prev => [...prev, { text: data.content, sender: 'assistant' }]);
+        setConversationHistory(prev => [
+          ...prev,
+          { role: 'assistant', content: data.content }
+        ]);
+      }
+
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages(prev => [...prev, {
+        text: 'Sorry, I encountered an error. Please try again.',
+        sender: 'assistant'
+      }]);
+      setIsLoading(false);
+    }
+  };
+
+  const executeToolCall = async (toolName, toolInput) => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+      const response = await fetch(`${API_URL}/api/sessions/execute-tool`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ toolName, toolInput })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to execute tool');
+      }
+
+      const result = await response.json();
+
+      // Apply the results to our state
+      if (result.shapes === 'CLEAR') {
+        setShapes([]);
+      } else if (result.shapes && result.shapes.length > 0) {
+        setShapes(prev => [...prev, ...result.shapes]);
+      }
+
+      if (result.pitchType) {
+        setPitchType(result.pitchType);
+      }
+    } catch (error) {
+      console.error('Tool execution error:', error);
     }
   };
 
@@ -77,6 +280,16 @@ function Sessions() {
         <div className={`p-4 border-b ${chatBorderColor}`}>
           <h2 className={`text-xl font-bold ${textColor}`}>Session Builder</h2>
           <p className={`text-sm ${textSecondaryColor}`}>Design your playbook</p>
+          {shapes.length > 0 && (
+            <button
+              onClick={() => setShapes([])}
+              className={`mt-2 w-full text-xs px-2 py-1 rounded transition ${
+                isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+              } ${textSecondaryColor}`}
+            >
+              Clear Field ({shapes.length} items)
+            </button>
+          )}
         </div>
 
         {/* Messages */}
@@ -93,6 +306,15 @@ function Sessions() {
               {msg.text}
             </div>
           ))}
+          {isLoading && (
+            <div className={`p-3 rounded-lg mr-4 ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900'}`}>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Input */}
@@ -102,13 +324,18 @@ function Sessions() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Describe your session..."
+              placeholder="Try: 'Set up a 4-3-3 formation' or 'Create a passing drill for U12 players'..."
               className={`flex-1 ${inputBgColor} ${textColor} rounded-lg p-3 resize-none focus:outline-none focus:ring-2 ${inputFocusRing}`}
               rows="3"
             />
             <button
               onClick={handleSend}
-              className="bg-green-500 hover:bg-green-600 text-white rounded-lg px-4 flex items-center justify-center transition"
+              disabled={isLoading || !input.trim()}
+              className={`rounded-lg px-4 flex items-center justify-center transition ${
+                isLoading || !input.trim()
+                  ? 'bg-gray-500 cursor-not-allowed'
+                  : 'bg-green-500 hover:bg-green-600'
+              } text-white`}
             >
               <Send size={20} />
             </button>
@@ -116,8 +343,11 @@ function Sessions() {
         </div>
       </div>
 
-      {/* Soccer Field - 80% width */}
-      <div className={`w-4/5 ${bgColor} relative`}>
+      {/* Shapes Panel - Between chat and field */}
+      <ShapesPanel isDarkMode={isDarkMode} />
+
+      {/* Soccer Field - flex-1 to take remaining space */}
+      <div className={`flex-1 ${bgColor} relative`}>
         {/* Zoom Controls - Upper Right */}
         <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
           <button
@@ -207,21 +437,72 @@ function Sessions() {
         </div>
 
         {/* Field Container */}
-        <div className="w-full h-full flex items-center justify-center p-8 overflow-auto">
+        <div className="w-full h-full flex flex-col items-center justify-center p-8 overflow-auto">
           <div
             className="relative"
             style={{
               transform: `scale(${zoom}) rotate(${rotation}deg)`,
               transition: 'transform 0.3s ease',
               width: pitchType === 'training' ? '900px' : '600px',
-              height: pitchType === 'full' ? '920px' : pitchType === 'training' ? '620px' : '520px'
+              height: pitchType === 'full' ? '900px' : pitchType === 'training' ? '600px' : '500px'
             }}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
           >
             {/* Render appropriate pitch type */}
             {pitchType === 'full' && <FullPitch fieldBgColor={fieldBgColor} fieldLineColor={fieldLineColor} />}
             {pitchType === 'attack' && <AttackHalf fieldBgColor={fieldBgColor} fieldLineColor={fieldLineColor} />}
             {pitchType === 'defense' && <DefenseHalf fieldBgColor={fieldBgColor} fieldLineColor={fieldLineColor} />}
             {pitchType === 'training' && <TrainingGrid fieldBgColor={fieldBgColor} fieldLineColor={fieldLineColor} />}
+
+            {/* Render shapes */}
+            {shapes.map(shape => (
+              <div
+                key={shape.id}
+                draggable
+                onDragStart={(e) => handleShapeDragStart(e, shape.id)}
+                onClick={() => handleShapeClick(shape.id)}
+                className="absolute cursor-move hover:opacity-80 transition"
+                style={{
+                  left: `calc(50% + ${shape.x}px)`,
+                  top: `calc(50% + ${shape.y}px)`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+                title="Drag to move"
+              >
+                {shape.type === 'circle' && (
+                  <div
+                    className="w-8 h-8 rounded-full"
+                    style={{
+                      backgroundColor: shape.fill ? shape.color : 'transparent',
+                      border: `2px solid ${shape.color}`
+                    }}
+                  ></div>
+                )}
+                {shape.type === 'triangle' && (
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 32 32"
+                    style={{ transform: `rotate(${shape.rotation || 0}deg)` }}
+                  >
+                    <polygon
+                      points="16,6 26,26 6,26"
+                      fill={shape.fill ? shape.color : 'none'}
+                      stroke={shape.color}
+                      strokeWidth="2"
+                    />
+                  </svg>
+                )}
+              </div>
+            ))}
+          </div>
+          {/* Label - always horizontal and outside the rotation */}
+          <div className={`mt-4 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            {pitchType === 'full' && 'Full Field'}
+            {pitchType === 'attack' && 'Attack'}
+            {pitchType === 'defense' && 'Defense'}
+            {pitchType === 'training' && 'Training Field'}
           </div>
         </div>
       </div>
