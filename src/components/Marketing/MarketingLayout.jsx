@@ -10,9 +10,8 @@ function MarketingLayout({ children }) {
           PROFE
         </Link>
         <ul className="nav-links">
-          <li><Link to="/main#features">Features</Link></li>
           <li><Link to="/main#how-it-works">How It Works</Link></li>
-          <li><Link to="/main#pricing">Pricing</Link></li>
+          <li><Link to="/register">Demo</Link></li>
           <li><Link to="/login">Sign In</Link></li>
         </ul>
       </nav>

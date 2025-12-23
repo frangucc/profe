@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
 import OnboardingSurvey from './components/Player/OnboardingSurvey';
@@ -14,6 +14,7 @@ import TrainingPlan from './components/Training/TrainingPlan';
 import AdminPanel from './components/Admin/AdminPanel';
 import Navigation from './components/Shared/Navigation';
 import LandingPage from './components/Marketing/LandingPage';
+import Sessions from './components/Sessions/Sessions';
 import api from './utils/api';
 
 const ThemeContext = createContext();
@@ -21,6 +22,41 @@ const AuthContext = createContext();
 
 export const useTheme = () => useContext(ThemeContext);
 export const useAuth = () => useContext(AuthContext);
+
+function AppContent({ currentUser, needsOnboarding }) {
+  const location = useLocation();
+  const isMarketingPage = location.pathname === '/main' || location.pathname === '/login' || location.pathname === '/register';
+  const isSessionsPage = location.pathname === '/sessions';
+
+  return (
+    <div className="min-h-screen">
+      {currentUser && !isMarketingPage && !isSessionsPage && <Navigation />}
+      <Routes>
+        {/* Marketing Site */}
+        <Route path="/main" element={<LandingPage />} />
+
+        {/* Auth Routes */}
+        <Route path="/login" element={!currentUser ? <Login /> : (needsOnboarding ? <Navigate to="/onboarding" /> : <Navigate to="/" />)} />
+        <Route path="/register" element={!currentUser ? <Register /> : (needsOnboarding ? <Navigate to="/onboarding" /> : <Navigate to="/" />)} />
+
+        {/* Onboarding */}
+        <Route path="/onboarding" element={currentUser && needsOnboarding ? <OnboardingSurvey /> : <Navigate to="/" />} />
+
+        {/* App Routes */}
+        <Route path="/" element={currentUser ? (needsOnboarding ? <Navigate to="/onboarding" /> : <PlayerDashboard />) : <Navigate to="/main" />} />
+        <Route path="/profile" element={currentUser ? <PlayerProfile /> : <Navigate to="/login" />} />
+        <Route path="/courses" element={currentUser ? <CourseList /> : <Navigate to="/login" />} />
+        <Route path="/courses/:id" element={currentUser ? <CourseDetail /> : <Navigate to="/login" />} />
+        <Route path="/videos" element={currentUser ? <VideoList /> : <Navigate to="/login" />} />
+        <Route path="/videos/:id" element={currentUser ? <VideoDetail /> : <Navigate to="/login" />} />
+        <Route path="/videos/upload" element={currentUser ? <VideoUpload /> : <Navigate to="/login" />} />
+        <Route path="/training" element={currentUser ? <TrainingPlan /> : <Navigate to="/login" />} />
+        <Route path="/sessions" element={currentUser ? <Sessions /> : <Navigate to="/login" />} />
+        <Route path="/admin" element={currentUser?.user_type === 'admin' ? <AdminPanel /> : <Navigate to="/" />} />
+      </Routes>
+    </div>
+  );
+}
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -65,31 +101,7 @@ function App() {
     <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
       <AuthContext.Provider value={{ currentUser, login, logout }}>
         <Router>
-          <div className="min-h-screen">
-            {currentUser && <Navigation />}
-            <Routes>
-              {/* Marketing Site */}
-              <Route path="/main" element={<LandingPage />} />
-
-              {/* Auth Routes */}
-              <Route path="/login" element={!currentUser ? <Login /> : (needsOnboarding ? <Navigate to="/onboarding" /> : <Navigate to="/" />)} />
-              <Route path="/register" element={!currentUser ? <Register /> : (needsOnboarding ? <Navigate to="/onboarding" /> : <Navigate to="/" />)} />
-
-              {/* Onboarding */}
-              <Route path="/onboarding" element={currentUser && needsOnboarding ? <OnboardingSurvey /> : <Navigate to="/" />} />
-
-              {/* App Routes */}
-              <Route path="/" element={currentUser ? (needsOnboarding ? <Navigate to="/onboarding" /> : <PlayerDashboard />) : <Navigate to="/main" />} />
-              <Route path="/profile" element={currentUser ? <PlayerProfile /> : <Navigate to="/login" />} />
-              <Route path="/courses" element={currentUser ? <CourseList /> : <Navigate to="/login" />} />
-              <Route path="/courses/:id" element={currentUser ? <CourseDetail /> : <Navigate to="/login" />} />
-              <Route path="/videos" element={currentUser ? <VideoList /> : <Navigate to="/login" />} />
-              <Route path="/videos/:id" element={currentUser ? <VideoDetail /> : <Navigate to="/login" />} />
-              <Route path="/videos/upload" element={currentUser ? <VideoUpload /> : <Navigate to="/login" />} />
-              <Route path="/training" element={currentUser ? <TrainingPlan /> : <Navigate to="/login" />} />
-              <Route path="/admin" element={currentUser?.user_type === 'admin' ? <AdminPanel /> : <Navigate to="/" />} />
-            </Routes>
-          </div>
+          <AppContent currentUser={currentUser} needsOnboarding={needsOnboarding} />
         </Router>
       </AuthContext.Provider>
     </ThemeContext.Provider>

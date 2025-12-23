@@ -4,23 +4,22 @@ import { Link } from 'react-router-dom';
 function Hero() {
   return (
     <section className="hero">
-      <div className="hero-bg"></div>
+      <div
+        className="hero-bg"
+        style={{ backgroundImage: 'url(/images/coach-player.png)' }}
+      ></div>
       <div className="hero-content">
         <h1 className="hero-title">
-          AI-Powered<br />
-          Coaching<br />
-          Platform
+          Every Player Deserves<br />
+          Their Own Journey
         </h1>
         <p className="hero-subtitle">
-          Build championship programs with intelligent session planning,<br />
-          visual training modules, and player development tools
+          A new era of training. Personalized programs that grow with every rep,<br />
+          every session, every breakthrough. Built for the grind. Made for greatness.
         </p>
         <div>
           <Link to="/register" className="cta-primary">
-            Start Free Trial
-          </Link>
-          <Link to="#how-it-works" className="cta-secondary">
-            See How It Works
+            Start Their Journey
           </Link>
         </div>
       </div>
