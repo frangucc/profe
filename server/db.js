@@ -12,6 +12,15 @@ dotenv.config();
 
 const { Pool } = pg;
 
+// Validate DATABASE_URL exists
+if (!process.env.DATABASE_URL) {
+  console.error('❌ FATAL ERROR: DATABASE_URL environment variable is not set!');
+  console.error('Please set DATABASE_URL in your environment variables.');
+  process.exit(1);
+}
+
+console.log('📝 Connecting to database:', process.env.DATABASE_URL.replace(/:[^:@]+@/, ':****@'));
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
