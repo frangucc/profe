@@ -12,6 +12,7 @@ import coursesRoutes from './routes/courses.js';
 import usersRoutes from './routes/users.js';
 import badgesRoutes from './routes/badges.js';
 import referenceRoutes from './routes/reference.js';
+import sessionsRoutes from './routes/sessions.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,6 +21,15 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Log startup environment
+console.log('🔧 Environment:', {
+  NODE_ENV: process.env.NODE_ENV,
+  PORT: PORT,
+  DATABASE_URL: process.env.DATABASE_URL ? '✅ Set' : '❌ Missing',
+  JWT_SECRET: process.env.JWT_SECRET ? '✅ Set' : '❌ Missing',
+  CLAUDE_API_KEY: process.env.CLAUDE_API_KEY ? '✅ Set' : '❌ Missing'
+});
 
 // Middleware
 app.use(cors());
@@ -33,6 +43,7 @@ app.use('/api/courses', coursesRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/badges', badgesRoutes);
 app.use('/api/reference', referenceRoutes);
+app.use('/api/sessions', sessionsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
