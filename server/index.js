@@ -50,13 +50,34 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'ProFe API is running' });
 });
 
+// Root health check for Railway
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', message: 'ProFe API is running' });
+});
+
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../dist')));
+  const distPath = path.join(__dirname, '../dist');
+  console.log('📁 Serving static files from:', distPath);
+
+  // Check if dist exists
+  import('fs').then(fs => {
+    if (fs.existsSync(distPath)) {
+      console.log('✅ dist folder exists');
+      const files = fs.readdirSync(distPath);
+      console.log('📄 Files in dist:', files.slice(0, 5));
+    } else {
+      console.error('❌ dist folder NOT FOUND at:', distPath);
+    }
+  });
+
+  app.use(express.static(distPath));
 
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
+    res.sendFile(path.join(distPath, 'index.html'));
   });
+} else {
+  console.log('⚠️  Not in production mode, static files not served');
 }
 
 // Error handling middleware
